@@ -1,17 +1,18 @@
-package agent
+package todos_test
 
 import (
 	"context"
 	"encoding/json"
 	"testing"
 
+	"github.com/rashadism/agents-go/tools/todos"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestWriteTodos(t *testing.T) {
 	t.Parallel()
-	tool := NewWriteTodosTool()
+	tool := todos.NewWriteTodosTool()
 
 	tests := []struct {
 		name      string

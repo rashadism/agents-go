@@ -11,7 +11,7 @@ import (
 	"github.com/mozilla-ai/any-llm-go/config"
 	"github.com/mozilla-ai/any-llm-go/providers"
 	"github.com/mozilla-ai/any-llm-go/providers/openai"
-	"github.com/rashadism/agents-go"
+	"github.com/rashadism/agents-go/pkg/agent"
 )
 
 func main() {

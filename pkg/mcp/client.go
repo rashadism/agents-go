@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strings"
 
-	agent "github.com/rashadism/agents-go"
+	"github.com/rashadism/agents-go/pkg/agent"
 
 	mcpsdk "github.com/modelcontextprotocol/go-sdk/mcp"
 )

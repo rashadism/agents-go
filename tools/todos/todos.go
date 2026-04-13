@@ -1,15 +1,17 @@
-package agent
+package todos
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
+
+	"github.com/rashadism/agents-go/pkg/agent"
 )
 
 // NewWriteTodosTool creates a write_todos tool for agent task tracking.
-func NewWriteTodosTool() Tool {
-	return Tool{
+func NewWriteTodosTool() agent.Tool {
+	return agent.Tool{
 		Name:        "write_todos",
 		Description: "Track investigation tasks. Call this to update your todo list with current tasks and their statuses.",
 		Parameters: map[string]any{
