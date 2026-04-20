@@ -11,31 +11,17 @@ import (
 	"github.com/rashadism/agents-go/pkg/agent"
 )
 
+type webSearchInput struct {
+	Query string `json:"query" jsonschema:"The search query"`
+}
+
 // tavilySearch returns a web search tool powered by the Tavily API.
 func tavilySearch(apiKey string) agent.Tool {
-	return agent.Tool{
-		Name:        "web_search",
-		Description: "Search the web for current information on any topic. Returns relevant results with titles, URLs, and content snippets.",
-		Parameters: map[string]any{
-			"type": "object",
-			"properties": map[string]any{
-				"query": map[string]any{
-					"type":        "string",
-					"description": "The search query",
-				},
-			},
-			"required": []string{"query"},
-		},
-		Execute: func(ctx context.Context, arguments json.RawMessage) (string, error) {
-			var args struct {
-				Query string `json:"query"`
-			}
-			if err := json.Unmarshal(arguments, &args); err != nil {
-				return "", fmt.Errorf("invalid arguments: %w", err)
-			}
-
+	return agent.NewTool("web_search",
+		"Search the web for current information on any topic. Returns relevant results with titles, URLs, and content snippets.",
+		func(ctx context.Context, in webSearchInput) (string, error) {
 			body, _ := json.Marshal(map[string]any{
-				"query":          args.Query,
+				"query":          in.Query,
 				"search_depth":   "basic",
 				"max_results":    5,
 				"include_answer": true,
@@ -84,6 +70,5 @@ func tavilySearch(apiKey string) agent.Tool {
 				return "No results found.", nil
 			}
 			return b.String(), nil
-		},
-	}
+		})
 }

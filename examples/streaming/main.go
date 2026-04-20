@@ -4,7 +4,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -15,57 +14,37 @@ import (
 	"github.com/rashadism/agents-go/pkg/agent"
 )
 
+type searchFlightsInput struct {
+	From string `json:"from" jsonschema:"Departure city"`
+	To   string `json:"to" jsonschema:"Arrival city"`
+	Date string `json:"date" jsonschema:"Travel date (YYYY-MM-DD)"`
+}
+
+type searchHotelsInput struct {
+	City     string `json:"city" jsonschema:"City name"`
+	Checkin  string `json:"checkin" jsonschema:"Check-in date (YYYY-MM-DD)"`
+	Checkout string `json:"checkout" jsonschema:"Check-out date (YYYY-MM-DD)"`
+}
+
 func main() {
 	provider, err := openai.New(config.WithAPIKey(os.Getenv("OPENAI_API_KEY")))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	searchFlights := agent.Tool{
-		Name:        "search_flights",
-		Description: "Search for available flights between two cities on a given date",
-		Parameters: map[string]any{
-			"type": "object",
-			"properties": map[string]any{
-				"from": map[string]any{"type": "string", "description": "Departure city"},
-				"to":   map[string]any{"type": "string", "description": "Arrival city"},
-				"date": map[string]any{"type": "string", "description": "Travel date (YYYY-MM-DD)"},
-			},
-			"required": []string{"from", "to", "date"},
-		},
-		Execute: func(_ context.Context, args json.RawMessage) (string, error) {
-			var p struct {
-				From string `json:"from"`
-				To   string `json:"to"`
-				Date string `json:"date"`
-			}
-			json.Unmarshal(args, &p)
+	searchFlights := agent.NewTool("search_flights",
+		"Search for available flights between two cities on a given date",
+		func(_ context.Context, in searchFlightsInput) (string, error) {
 			return fmt.Sprintf(`[{"airline":"SkyLine","flight":"SL-402","from":%q,"to":%q,"date":%q,"depart":"08:30","arrive":"11:45","price":289},{"airline":"AirConnect","flight":"AC-118","from":%q,"to":%q,"date":%q,"depart":"14:15","arrive":"17:30","price":345}]`,
-				p.From, p.To, p.Date, p.From, p.To, p.Date), nil
-		},
-	}
+				in.From, in.To, in.Date, in.From, in.To, in.Date), nil
+		})
 
-	searchHotels := agent.Tool{
-		Name:        "search_hotels",
-		Description: "Search for available hotels in a city for given dates",
-		Parameters: map[string]any{
-			"type": "object",
-			"properties": map[string]any{
-				"city":      map[string]any{"type": "string", "description": "City name"},
-				"checkin":   map[string]any{"type": "string", "description": "Check-in date (YYYY-MM-DD)"},
-				"checkout":  map[string]any{"type": "string", "description": "Check-out date (YYYY-MM-DD)"},
-			},
-			"required": []string{"city", "checkin", "checkout"},
-		},
-		Execute: func(_ context.Context, args json.RawMessage) (string, error) {
-			var p struct {
-				City string `json:"city"`
-			}
-			json.Unmarshal(args, &p)
+	searchHotels := agent.NewTool("search_hotels",
+		"Search for available hotels in a city for given dates",
+		func(_ context.Context, in searchHotelsInput) (string, error) {
 			return fmt.Sprintf(`[{"name":"The Grand %s","rating":4.5,"price_per_night":180,"amenities":["wifi","pool","gym"]},{"name":"%s Central Inn","rating":4.2,"price_per_night":120,"amenities":["wifi","breakfast"]}]`,
-				p.City, p.City), nil
-		},
-	}
+				in.City, in.City), nil
+		})
 
 	prompt := "Plan a trip from San Francisco to Tokyo, May 20-25. Find flights and hotels."
 

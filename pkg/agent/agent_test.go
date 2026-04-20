@@ -96,14 +96,10 @@ func toolCall(id, name, args string) providers.ToolCall {
 }
 
 func echoTool(name string) Tool {
-	return Tool{
-		Name:        name,
-		Description: "echoes input",
-		Parameters:  map[string]any{"type": "object"},
-		Execute: func(_ context.Context, args json.RawMessage) (string, error) {
+	return NewToolFromSchema(name, "echoes input", map[string]any{"type": "object"},
+		func(_ context.Context, args json.RawMessage) (string, error) {
 			return string(args), nil
-		},
-	}
+		})
 }
 
 func userMsg(content string) providers.Message {
@@ -365,14 +361,10 @@ func TestRun_UnknownTool(t *testing.T) {
 func TestRun_ToolExecutionError(t *testing.T) {
 	t.Parallel()
 
-	failTool := Tool{
-		Name:        "fail",
-		Description: "always fails",
-		Parameters:  map[string]any{"type": "object"},
-		Execute: func(context.Context, json.RawMessage) (string, error) {
+	failTool := NewTool("fail", "always fails",
+		func(context.Context, struct{}) (string, error) {
 			return "", errors.New("boom")
-		},
-	}
+		})
 
 	fp := newFakeProvider(
 		completion("", toolCall("tc1", "fail", `{}`)),
@@ -397,15 +389,11 @@ func TestRun_ToolExecutionError(t *testing.T) {
 func TestRun_ReturnDirect(t *testing.T) {
 	t.Parallel()
 
-	directTool := Tool{
-		Name:         "direct",
-		Description:  "returns directly",
-		Parameters:   map[string]any{"type": "object"},
-		ReturnDirect: true,
-		Execute: func(_ context.Context, _ json.RawMessage) (string, error) {
+	directTool := NewTool("direct", "returns directly",
+		func(_ context.Context, _ struct{}) (string, error) {
 			return "direct result", nil
-		},
-	}
+		})
+	directTool.ReturnDirect = true
 
 	fp := newFakeProvider(
 		completion("", toolCall("tc1", "direct", `{}`)),
@@ -743,17 +731,13 @@ func TestRun_ParallelToolExecution(t *testing.T) {
 	started := make(chan struct{}, 3)
 	release := make(chan struct{})
 
-	countTool := Tool{
-		Name:        "count",
-		Description: "counts",
-		Parameters:  map[string]any{"type": "object"},
-		Execute: func(_ context.Context, _ json.RawMessage) (string, error) {
+	countTool := NewTool("count", "counts",
+		func(_ context.Context, _ struct{}) (string, error) {
 			callCount.Add(1)
 			started <- struct{}{} // signal started
 			<-release             // wait for all to be started
 			return "ok", nil
-		},
-	}
+		})
 
 	fp := newFakeProvider(
 		completion("",
@@ -991,22 +975,14 @@ func TestRun_MultiStepInvestigation(t *testing.T) {
 	t.Parallel()
 
 	// Simulate: model calls query_logs, sees errors, calls query_metrics, then answers.
-	queryLogs := Tool{
-		Name:        "query_logs",
-		Description: "query logs",
-		Parameters:  map[string]any{"type": "object"},
-		Execute: func(_ context.Context, _ json.RawMessage) (string, error) {
+	queryLogs := NewTool("query_logs", "query logs",
+		func(_ context.Context, _ struct{}) (string, error) {
 			return `{"logs":[{"level":"ERROR","message":"OOM killed"}]}`, nil
-		},
-	}
-	queryMetrics := Tool{
-		Name:        "query_metrics",
-		Description: "query metrics",
-		Parameters:  map[string]any{"type": "object"},
-		Execute: func(_ context.Context, _ json.RawMessage) (string, error) {
+		})
+	queryMetrics := NewTool("query_metrics", "query metrics",
+		func(_ context.Context, _ struct{}) (string, error) {
 			return `{"memory_usage":0.95,"memory_limit":0.5}`, nil
-		},
-	}
+		})
 
 	fp := newFakeProvider(
 		// Iteration 1: model calls query_logs.
@@ -1047,18 +1023,14 @@ func TestRun_ToolErrorRecovery(t *testing.T) {
 	t.Parallel()
 
 	callCount := 0
-	flaky := Tool{
-		Name:        "flaky_api",
-		Description: "fails first, succeeds second",
-		Parameters:  map[string]any{"type": "object"},
-		Execute: func(_ context.Context, _ json.RawMessage) (string, error) {
+	flaky := NewTool("flaky_api", "fails first, succeeds second",
+		func(_ context.Context, _ struct{}) (string, error) {
 			callCount++
 			if callCount == 1 {
 				return "", errors.New("connection timeout")
 			}
 			return `{"status":"healthy"}`, nil
-		},
-	}
+		})
 
 	fp := newFakeProvider(
 		// Iteration 1: model calls flaky_api -> fails.
@@ -1102,14 +1074,10 @@ func TestRun_ToolErrorRecovery(t *testing.T) {
 func TestRun_StructuredOutputAfterTools(t *testing.T) {
 	t.Parallel()
 
-	investigate := Tool{
-		Name:        "investigate",
-		Description: "gathers data",
-		Parameters:  map[string]any{"type": "object"},
-		Execute: func(_ context.Context, _ json.RawMessage) (string, error) {
+	investigate := NewTool("investigate", "gathers data",
+		func(_ context.Context, _ struct{}) (string, error) {
 			return `{"finding":"high latency on /api/orders"}`, nil
-		},
-	}
+		})
 
 	fp := newFakeProvider(
 		// Iteration 1: model investigates.

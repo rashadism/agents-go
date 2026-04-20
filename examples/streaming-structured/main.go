@@ -49,28 +49,15 @@ func main() {
 		log.Fatal(err)
 	}
 
-	getProductSpecs := agent.Tool{
-		Name:        "get_product_specs",
-		Description: "Get detailed specifications for a product by name",
-		Parameters: map[string]any{
-			"type": "object",
-			"properties": map[string]any{
-				"product": map[string]any{
-					"type":        "string",
-					"description": "Product name to look up",
-				},
-			},
-			"required": []string{"product"},
-		},
-		Execute: func(_ context.Context, args json.RawMessage) (string, error) {
-			var p struct {
-				Product string `json:"product"`
-			}
-			json.Unmarshal(args, &p)
-			// Return different specs depending on product name keywords
-			return fmt.Sprintf(`{"product":%q,"price":299,"battery_hours":30,"weight_g":250,"noise_cancelling":true,"bluetooth":"5.3","driver_size_mm":40,"water_resistant":true,"user_rating":4.3,"reviews":1250}`, p.Product), nil
-		},
+	type productSpecsInput struct {
+		Product string `json:"product" jsonschema:"Product name to look up"`
 	}
+
+	getProductSpecs := agent.NewTool("get_product_specs",
+		"Get detailed specifications for a product by name",
+		func(_ context.Context, in productSpecsInput) (string, error) {
+			return fmt.Sprintf(`{"product":%q,"price":299,"battery_hours":30,"weight_g":250,"noise_cancelling":true,"bluetooth":"5.3","driver_size_mm":40,"water_resistant":true,"user_rating":4.3,"reviews":1250}`, in.Product), nil
+		})
 
 	prompt := "Compare the Sony WH-1000XM5 and the Bose QuietComfort Ultra headphones."
 

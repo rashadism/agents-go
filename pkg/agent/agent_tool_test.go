@@ -145,7 +145,8 @@ func TestAgentTool_InvalidJSON(t *testing.T) {
 
 	_, err = tool.Execute(context.Background(), json.RawMessage(`{bad json}`))
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "invalid agent tool arguments")
+	assert.Contains(t, err.Error(), `tool "test"`)
+	assert.Contains(t, err.Error(), "invalid arguments")
 }
 
 func TestAgentTool_ChildSystemPromptIsolation(t *testing.T) {

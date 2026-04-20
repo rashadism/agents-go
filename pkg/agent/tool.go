@@ -8,6 +8,16 @@ import (
 )
 
 // Tool represents a callable tool available to the agent.
+//
+// Construct tools through one of the provided constructors rather than as a
+// struct literal:
+//
+//   - [NewTool]            — static schema derived from a Go input struct.
+//   - [NewToolFromSchema]  — explicit JSON Schema (MCP, enum constraints, etc.).
+//   - [AgentTool]          — wrap a child Agent as a tool.
+//
+// The struct fields remain exported so the agent loop and middleware can read
+// them, and so flags like ReturnDirect can be set on a constructed value.
 type Tool struct {
 	// Name is the function name the model uses to invoke this tool.
 	Name string

@@ -4,7 +4,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -14,6 +13,14 @@ import (
 	"github.com/mozilla-ai/any-llm-go/providers/openai"
 	"github.com/rashadism/agents-go/pkg/agent"
 )
+
+type lookupOrderInput struct {
+	OrderID string `json:"order_id" jsonschema:"The order ID to look up"`
+}
+
+type checkInventoryInput struct {
+	ProductName string `json:"product_name" jsonschema:"Name of the product"`
+}
 
 // loggingMiddleware logs agent lifecycle, model calls, and tool calls.
 type loggingMiddleware struct {
@@ -101,49 +108,17 @@ func main() {
 		log.Fatal(err)
 	}
 
-	lookupOrder := agent.Tool{
-		Name:        "lookup_order",
-		Description: "Look up a customer order by order ID",
-		Parameters: map[string]any{
-			"type": "object",
-			"properties": map[string]any{
-				"order_id": map[string]any{
-					"type":        "string",
-					"description": "The order ID to look up",
-				},
-			},
-			"required": []string{"order_id"},
-		},
-		Execute: func(_ context.Context, args json.RawMessage) (string, error) {
-			var p struct {
-				OrderID string `json:"order_id"`
-			}
-			json.Unmarshal(args, &p)
-			return fmt.Sprintf(`{"order_id":%q,"status":"shipped","items":[{"name":"Wireless Headphones","qty":1,"price":79.99}],"tracking":"TRK-98765","estimated_delivery":"2026-04-08"}`, p.OrderID), nil
-		},
-	}
+	lookupOrder := agent.NewTool("lookup_order",
+		"Look up a customer order by order ID",
+		func(_ context.Context, in lookupOrderInput) (string, error) {
+			return fmt.Sprintf(`{"order_id":%q,"status":"shipped","items":[{"name":"Wireless Headphones","qty":1,"price":79.99}],"tracking":"TRK-98765","estimated_delivery":"2026-04-08"}`, in.OrderID), nil
+		})
 
-	checkInventory := agent.Tool{
-		Name:        "check_inventory",
-		Description: "Check if a product is currently in stock",
-		Parameters: map[string]any{
-			"type": "object",
-			"properties": map[string]any{
-				"product_name": map[string]any{
-					"type":        "string",
-					"description": "Name of the product",
-				},
-			},
-			"required": []string{"product_name"},
-		},
-		Execute: func(_ context.Context, args json.RawMessage) (string, error) {
-			var p struct {
-				ProductName string `json:"product_name"`
-			}
-			json.Unmarshal(args, &p)
-			return fmt.Sprintf(`{"product":%q,"in_stock":true,"quantity_available":23,"warehouse":"US-West"}`, p.ProductName), nil
-		},
-	}
+	checkInventory := agent.NewTool("check_inventory",
+		"Check if a product is currently in stock",
+		func(_ context.Context, in checkInventoryInput) (string, error) {
+			return fmt.Sprintf(`{"product":%q,"in_stock":true,"quantity_available":23,"warehouse":"US-West"}`, in.ProductName), nil
+		})
 
 	prompt := "I ordered some wireless headphones (order #ORD-1234) but want to add a charging case. Is it in stock? And where's my order?"
 

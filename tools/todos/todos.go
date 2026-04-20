@@ -10,38 +10,43 @@ import (
 )
 
 // NewWriteTodosTool creates a write_todos tool for agent task tracking.
+//
+// The schema is built explicitly (rather than derived from a Go struct) so
+// the status field can carry an enum constraint, which the schema reflector
+// cannot infer from a plain string field.
 func NewWriteTodosTool() agent.Tool {
-	return agent.Tool{
-		Name:        "write_todos",
-		Description: "Track investigation tasks. Call this to update your todo list with current tasks and their statuses.",
-		Parameters: map[string]any{
-			"type":     "object",
-			"required": []string{"todos"},
-			"properties": map[string]any{
-				"todos": map[string]any{
-					"type": "array",
-					"items": map[string]any{
-						"type":     "object",
-						"required": []string{"content", "status"},
-						"properties": map[string]any{
-							"content": map[string]any{
-								"type":        "string",
-								"minLength":   1,
-								"description": "What needs to be done",
-							},
-							"status": map[string]any{
-								"type":        "string",
-								"description": "Task status: pending, in_progress, or completed",
-								"enum":        []string{"pending", "in_progress", "completed"},
-							},
+	parameters := map[string]any{
+		"type":     "object",
+		"required": []string{"todos"},
+		"properties": map[string]any{
+			"todos": map[string]any{
+				"type": "array",
+				"items": map[string]any{
+					"type":     "object",
+					"required": []string{"content", "status"},
+					"properties": map[string]any{
+						"content": map[string]any{
+							"type":        "string",
+							"minLength":   1,
+							"description": "What needs to be done",
+						},
+						"status": map[string]any{
+							"type":        "string",
+							"description": "Task status: pending, in_progress, or completed",
+							"enum":        []string{"pending", "in_progress", "completed"},
 						},
 					},
-					"description": "The updated todo list",
 				},
+				"description": "The updated todo list",
 			},
 		},
-		Execute: executeTodos,
 	}
+	return agent.NewToolFromSchema(
+		"write_todos",
+		"Track investigation tasks. Call this to update your todo list with current tasks and their statuses.",
+		parameters,
+		executeTodos,
+	)
 }
 
 func executeTodos(_ context.Context, args json.RawMessage) (string, error) {

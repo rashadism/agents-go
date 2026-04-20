@@ -3,7 +3,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -14,46 +13,24 @@ import (
 	"github.com/rashadism/agents-go/pkg/agent"
 )
 
+type searchFlightsInput struct {
+	From string `json:"from" jsonschema:"Departure city"`
+	To   string `json:"to" jsonschema:"Arrival city"`
+	Date string `json:"date" jsonschema:"Travel date (YYYY-MM-DD)"`
+}
+
 func main() {
 	provider, err := openai.New(config.WithAPIKey(os.Getenv("OPENAI_API_KEY")))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	searchFlights := agent.Tool{
-		Name:        "search_flights",
-		Description: "Search for available flights between two cities on a given date",
-		Parameters: map[string]any{
-			"type": "object",
-			"properties": map[string]any{
-				"from": map[string]any{
-					"type":        "string",
-					"description": "Departure city",
-				},
-				"to": map[string]any{
-					"type":        "string",
-					"description": "Arrival city",
-				},
-				"date": map[string]any{
-					"type":        "string",
-					"description": "Travel date (YYYY-MM-DD)",
-				},
-			},
-			"required": []string{"from", "to", "date"},
-		},
-		Execute: func(_ context.Context, args json.RawMessage) (string, error) {
-			var p struct {
-				From string `json:"from"`
-				To   string `json:"to"`
-				Date string `json:"date"`
-			}
-			if err := json.Unmarshal(args, &p); err != nil {
-				return "", err
-			}
+	searchFlights := agent.NewTool("search_flights",
+		"Search for available flights between two cities on a given date",
+		func(_ context.Context, in searchFlightsInput) (string, error) {
 			return fmt.Sprintf(`[{"airline":"SkyLine","flight":"SL-402","from":%q,"to":%q,"date":%q,"depart":"08:30","arrive":"11:45","price":289},{"airline":"AirConnect","flight":"AC-118","from":%q,"to":%q,"date":%q,"depart":"14:15","arrive":"17:30","price":345}]`,
-				p.From, p.To, p.Date, p.From, p.To, p.Date), nil
-		},
-	}
+				in.From, in.To, in.Date, in.From, in.To, in.Date), nil
+		})
 
 	prompt := "Find me flights from New York to London on 2026-05-15"
 

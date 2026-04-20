@@ -158,12 +158,12 @@ func convertMCPTool(session *mcpsdk.ClientSession, mt *mcpsdk.Tool) (agent.Tool,
 		return agent.Tool{}, fmt.Errorf("converting input schema: %w", err)
 	}
 
-	return agent.Tool{
-		Name:        mt.Name,
-		Description: mt.Description,
-		Parameters:  params,
-		Execute:     mcpToolExecutor(session, mt.Name),
-	}, nil
+	return agent.NewToolFromSchema(
+		mt.Name,
+		mt.Description,
+		params,
+		mcpToolExecutor(session, mt.Name),
+	), nil
 }
 
 // mcpToolExecutor returns an Execute function that forwards calls to the

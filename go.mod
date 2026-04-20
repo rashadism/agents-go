@@ -3,6 +3,7 @@ module github.com/rashadism/agents-go
 go 1.26.1
 
 require (
+	github.com/google/jsonschema-go v0.4.2
 	github.com/modelcontextprotocol/go-sdk v1.4.1
 	github.com/mozilla-ai/any-llm-go v0.9.0
 	github.com/stretchr/testify v1.11.1
@@ -10,7 +11,6 @@ require (
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/google/jsonschema-go v0.4.2 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/openai/openai-go v1.12.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
